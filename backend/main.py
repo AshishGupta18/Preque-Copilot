@@ -157,3 +157,57 @@ async def verify_artifact(
         "reason": result.get("reason"),
         "updated_graph": list(project_state.values())
     }
+
+
+    import pandas as pd
+
+@app.post("/api/upload-checklist")
+async def upload_and_parse_checklist(file: UploadFile = File(...)):
+    """Parser Agent: Converts unstructured/scattered spreadsheets into a structured DAG."""
+    contents = await file.read()
+    
+    # Read CSV or Excel into text representation
+    try:
+        if file.filename.endswith(".csv"):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+        raw_table_str = df.to_string(index=False)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read spreadsheet: {str(e)}")
+
+    prompt = f"""
+    You are the PrereqCopilot Parser Agent. Convert this scattered checklist into a structured task dependency graph.
+    Checklist Content:
+    {raw_table_str}
+
+    Return ONLY a valid JSON list of objects matching this exact schema:
+    [
+      {{
+        "id": "Unique Task ID (e.g., TASK-101)",
+        "title": "Short descriptive task title",
+        "owner": "Internal or Customer",
+        "status": "READY if it has no dependencies, otherwise BLOCKED",
+        "blocked_by": ["List of Task IDs that must complete before this one"],
+        "criteria": "Concrete verification criteria required for completion",
+        "phase": "Kickoff, Foundation, or Go-Live"
+      }}
+    ]
+    """
+
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        cleaned_json = response.text.replace("```json", "").replace("```", "").strip()
+        parsed_tasks = json.loads(cleaned_json)
+
+        # Clear existing state and populate with uploaded tasks
+        global project_state
+        project_state = {t["id"]: TaskNode(**t) for t in parsed_tasks}
+
+        return {
+            "message": f"Successfully parsed {len(parsed_tasks)} prerequisites.",
+            "tasks": list(project_state.values())
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Parsing error: {str(e)}")
