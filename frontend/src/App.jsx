@@ -29,7 +29,8 @@ import {
   Check
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+// Automatically routes to localhost:8000 during local dev, and relative /api on Vercel
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8000/api' : '/api';
 
 // ----------------- Custom Node Component with Handles -----------------
 function TaskNodeComponent({ data }) {
