@@ -1,8 +1,8 @@
 import os
 import json
 import base64
-from typing import List, Dict
 import httpx
+from typing import List, Dict, Optional
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -11,7 +11,6 @@ from groq import Groq
 
 load_dotenv()
 
-# Initialize Groq with SSL verification bypass for corporate networks
 groq_api_key = os.getenv("GROQ_API_KEY")
 client = None
 if groq_api_key:
@@ -20,7 +19,7 @@ if groq_api_key:
         http_client=httpx.Client(verify=False)
     )
 
-app = FastAPI(title="PrereqCopilot API", version="2.0")
+app = FastAPI(title="PrereqCopilot API - smartShift Edition")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,146 +29,188 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class TaskNode(BaseModel):
-    id: str
-    title: str
-    owner: str
-    status: str  # "BLOCKED", "READY", "COMPLETED"
-    blocked_by: List[str]
-    criteria: str
-    phase: str
-    x: int
-    y: int
-
 class ChatRequest(BaseModel):
     task_id: str
     message: str
+    project_id: Optional[str] = "sunchemical"
 
-# ----------------- Enterprise Multi-Branch DAG -----------------
-project_state: Dict[str, TaskNode] = {
-    "TASK-IAM": TaskNode(
-        id="TASK-IAM",
-        title="Provision Cloud IAM & Role",
-        owner="Customer",
-        status="READY",
-        blocked_by=[],
-        criteria="IAM role 'AppDeployer' created with read/write access to staging clusters and attached to bastion jumpbox.",
-        phase="Kickoff",
-        x=60,
-        y=80
-    ),
-    "TASK-VPN": TaskNode(
-        id="TASK-VPN",
-        title="Establish IPsec VPN Gateway",
-        owner="Customer",
-        status="READY",
-        blocked_by=[],
-        criteria="Site-to-site IPsec tunnel established between on-prem gateway 198.51.100.1 and VPC gateway 10.240.0.1.",
-        phase="Kickoff",
-        x=60,
-        y=280
-    ),
-    "TASK-SVC-ACC": TaskNode(
-        id="TASK-SVC-ACC",
-        title="Create Service Account & Vault",
-        owner="Customer",
-        status="BLOCKED",
-        blocked_by=["TASK-IAM"],
-        criteria="Service account 'svc-prereq-agent' generated and mapped to HashiCorp Vault path /secret/dev/creds.",
-        phase="Foundation",
-        x=380,
-        y=80
-    ),
-    "TASK-FW": TaskNode(
-        id="TASK-FW",
-        title="Configure Inbound Security Rules",
-        owner="Customer",
-        status="BLOCKED",
-        blocked_by=["TASK-VPN"],
-        criteria="Inbound firewall rules permitting TCP 443, 8443, and 22 from subnet 10.240.0.0/16.",
-        phase="Foundation",
-        x=380,
-        y=280
-    ),
-    "TASK-DB-WHITELIST": TaskNode(
-        id="TASK-DB-WHITELIST",
-        title="Whitelist Database Subnet",
-        owner="Customer",
-        status="BLOCKED",
-        blocked_by=["TASK-SVC-ACC", "TASK-FW"],
-        criteria="PostgreSQL subnet 10.240.4.0/24 accessible from AppDeployer role with SELECT, INSERT, UPDATE grants.",
-        phase="Foundation",
-        x=700,
-        y=180
-    ),
-    "TASK-ROUTE": TaskNode(
-        id="TASK-ROUTE",
-        title="Deploy Base Transport Route",
-        owner="Internal",
-        status="BLOCKED",
-        blocked_by=["TASK-DB-WHITELIST"],
-        criteria="Target transport route TR_DEV_901 mounted and verified in staging registry.",
-        phase="Foundation",
-        x=1020,
-        y=180
-    ),
-    "TASK-SMOKE": TaskNode(
-        id="TASK-SMOKE",
-        title="System Integration Smoke Test",
-        owner="Internal",
-        status="BLOCKED",
-        blocked_by=["TASK-ROUTE"],
-        criteria="Synthetic health check endpoint /api/health returning HTTP 200 with all upstream services GREEN.",
-        phase="Go-Live",
-        x=1340,
-        y=180
-    ),
+# ----------------- Multi-Project Database -----------------
+DATABASES = {
+    "sunchemical": {
+        "graph": [
+            {
+                "id": "TASK-ONB",
+                "title": "Project Onboarding",
+                "owner": "smartShift PM",
+                "status": "COMPLETED",
+                "blocked_by": [],
+                "criteria": "Kickoff documents and SOW signed off by Sunchemical and smartShift.",
+                "phase": "Kickoff",
+                "x": 50,
+                "y": 160
+            },
+            {
+                "id": "TASK-VPN",
+                "title": "VPN Rules",
+                "owner": "Customer",
+                "status": "READY",
+                "blocked_by": ["TASK-ONB"],
+                "criteria": "SonicWall Connect Tunnel verified with gateway vpn.sunchemical.com.",
+                "phase": "Foundation",
+                "x": 350,
+                "y": 60
+            },
+            {
+                "id": "TASK-USR",
+                "title": "User Access Sheet",
+                "owner": "Customer",
+                "status": "READY",
+                "blocked_by": ["TASK-ONB"],
+                "criteria": "All consultants and developers mapped in the customer user sheet.",
+                "phase": "Foundation",
+                "x": 350,
+                "y": 260
+            },
+            {
+                "id": "TASK-SYS",
+                "title": "System Setup",
+                "owner": "Internal",
+                "status": "BLOCKED",
+                "blocked_by": ["TASK-VPN", "TASK-USR"],
+                "criteria": "SAP dev & staging landscape reachable through SAP Router 198.51.100.25.",
+                "phase": "Setup",
+                "x": 650,
+                "y": 160
+            },
+            {
+                "id": "TASK-CERT",
+                "title": "Certificate Completion by Users",
+                "owner": "Customer",
+                "status": "BLOCKED",
+                "blocked_by": ["TASK-SYS"],
+                "criteria": "Client SSL/TLS identity certificates distributed and imported to browser keystores.",
+                "phase": "Execution",
+                "x": 950,
+                "y": 60
+            },
+            {
+                "id": "TASK-TR-MIG",
+                "title": "TR Migration Rules",
+                "owner": "Internal",
+                "status": "BLOCKED",
+                "blocked_by": ["TASK-SYS"],
+                "criteria": "smartShift automated migration mapping and rule 232 freeze logic configured.",
+                "phase": "Execution",
+                "x": 950,
+                "y": 260
+            },
+            {
+                "id": "TASK-TOC",
+                "title": "ToC Import",
+                "owner": "Internal",
+                "status": "BLOCKED",
+                "blocked_by": ["TASK-CERT", "TASK-TR-MIG"],
+                "criteria": "Transport of Copies (ToC) imported into shadow sandbox without syntax errors.",
+                "phase": "Delivery",
+                "x": 1250,
+                "y": 160
+            },
+            {
+                "id": "TASK-TR-REL",
+                "title": "TR Release",
+                "owner": "smartShift Release",
+                "status": "BLOCKED",
+                "blocked_by": ["TASK-TOC"],
+                "criteria": "Dual-control release sign-off executed in 3-Way Differ platform.",
+                "phase": "Go-Live",
+                "x": 1550,
+                "y": 160
+            }
+        ],
+        "specs": {
+            "global_rules": [
+                {"id": "SS-RULE-232", "desc": "Code Freeze Deadline: TR cut-off strictly 48h prior to sprint release", "status": "Applied - Pre-Deadline"},
+                {"id": "SS-RULE-045", "desc": "Customer SAP Router Whitelist: Only TLS port 3299 traffic permitted", "status": "Active"},
+                {"id": "SS-RULE-101", "desc": "Dual-Control TR Release: Requires 1 internal + 1 customer signoff", "status": "Enforced"}
+            ],
+            "vpn": [
+                {"param": "VPN Client", "val": "SonicWall Connect Tunnel"},
+                {"param": "Gateway IP", "val": "vpn.sunchemical.com"},
+                {"param": "Authentication Protocol", "val": "SAML 2.0 / Azure AD MFA"},
+                {"param": "Assigned Subnet", "val": "10.140.8.0/22"}
+            ],
+            "links": [
+                {
+                    "name": "Customer User Access Sheet (Google Sheets)",
+                    "desc": "Live master roster of customer & smartShift mapped credentials",
+                    "url": "https://docs.google.com/spreadsheets/d/1rzrJIHnkiSZ2V1UCPqCvaxBdrwyGUgY1/edit?pli=1&gid=1254713245#gid=1254713245"
+                },
+                {
+                    "name": "smartShift 3-Way Differ (Retrofit SST-8518)",
+                    "desc": "Code reconciliation, custom code analysis & release diff comparator",
+                    "url": "https://retrofit.smartshift.com/sst8518"
+                }
+            ],
+            "users": [
+                {"id": "EMP-8021", "name": "Ashish Gupta", "role": "smartShift Project Lead", "org": "smartShift", "clearance": "Lead Admin"},
+                {"id": "EMP-9412", "name": "Sarah Jenkins", "role": "Customer Network & SecOps Lead", "org": "Sunchemical", "clearance": "Security Approver"},
+                {"id": "EMP-1049", "name": "Michael Chang", "role": "SAP Basis Architect", "org": "smartShift", "clearance": "System Admin"},
+                {"id": "EMP-3392", "name": "Elena Rostova", "role": "Release & Cutover Specialist", "org": "Sunchemical", "clearance": "Release Signer"}
+            ]
+        }
+    },
+    "bayer": {
+        "graph": [
+            {"id": "BAY-KICK", "title": "Bayer Project Kickoff", "owner": "smartShift PM", "status": "READY", "blocked_by": [], "criteria": "Statement of Work signed.", "phase": "Kickoff", "x": 60, "y": 160},
+            {"id": "BAY-CODE", "title": "Custom Code Extraction", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["BAY-KICK"], "criteria": "ECC 6.0 custom packages pulled.", "phase": "Extraction", "x": 380, "y": 160}
+        ],
+        "specs": {
+            "global_rules": [{"id": "BAY-RULE-01", "desc": "Pharma GxP Audit Trace Enforced", "status": "Active"}],
+            "vpn": [{"param": "VPN Client", "val": "Cisco AnyConnect"}, {"param": "Gateway", "val": "vpn.bayer.com"}],
+            "links": [{"name": "Bayer Runbook", "desc": "Internal portal", "url": "https://retrofit.smartshift.com"}],
+            "users": [{"id": "EMP-5501", "name": "David Mueller", "role": "Compliance Officer", "org": "Bayer", "clearance": "GxP Auditor"}]
+        }
+    },
+    "nestle": {
+        "graph": [
+            {"id": "NES-ONB", "title": "Nestlé Global Access", "owner": "Customer", "status": "READY", "blocked_by": [], "criteria": "OAuth tokens provisioned.", "phase": "Kickoff", "x": 60, "y": 160}
+        ],
+        "specs": {
+            "global_rules": [{"id": "NES-RULE-09", "desc": "SAP S/4HANA Migration Window Lockdown", "status": "Pending"}],
+            "vpn": [{"param": "VPN Client", "val": "GlobalProtect"}, {"param": "Gateway", "val": "vpn.nestle.com"}],
+            "links": [{"name": "Nestlé Architecture", "desc": "Confluence wiki", "url": "https://retrofit.smartshift.com"}],
+            "users": [{"id": "EMP-7712", "name": "Claire Dubois", "role": "SAP Transformation Lead", "org": "Nestlé", "clearance": "Executive"}]
+        }
+    }
 }
 
-# ----------------- Mock Specifications Data -----------------
-MOCK_SPECS = {
-    "firewall_rules": [
-        {"id": "FW-001", "src": "10.240.0.0/16", "port": "443", "proto": "TCP", "action": "ALLOW", "purpose": "API Ingress"},
-        {"id": "FW-002", "src": "10.240.0.0/16", "port": "8443", "proto": "TCP", "action": "ALLOW", "purpose": "Admin Console"},
-        {"id": "FW-003", "src": "198.51.100.24/32", "port": "22", "proto": "TCP", "action": "ALLOW", "purpose": "SSH Bastion"},
-        {"id": "FW-004", "src": "0.0.0.0/0", "port": "80", "proto": "TCP", "action": "DENY", "purpose": "Block Plain HTTP"}
-    ],
-    "vpn_config": [
-        {"param": "Gateway IP", "val": "198.51.100.1", "compliance": "NIST SP 800-77"},
-        {"param": "Encryption", "val": "AES-256-GCM / SHA-384", "compliance": "FIPS 140-3"},
-        {"param": "DH Group", "val": "Group 20 (384-bit)", "compliance": "NSA Suite B"},
-        {"param": "Status", "val": "TUNNEL_UP", "compliance": "SOC-2 Ready"}
-    ],
-    "users": [
-        {"id": "EMP-8021", "name": "Ashish Gupta", "role": "Lead Architect", "clearance": "L3 Admin"},
-        {"id": "EMP-9412", "name": "Sarah Jenkins", "role": "SecOps Engineer", "clearance": "L2 SecOps"},
-        {"id": "EMP-1049", "name": "Michael Chang", "role": "Cloud Platform", "clearance": "L3 Admin"}
-    ]
-}
+@app.get("/api/graph/{project_id}")
+def get_graph(project_id: str):
+    if project_id not in DATABASES:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"tasks": DATABASES[project_id]["graph"]}
 
-@app.get("/api/graph")
-def get_graph():
-    return {"tasks": list(project_state.values())}
-
-@app.get("/api/specs")
-def get_specs():
-    return MOCK_SPECS
+@app.get("/api/specs/{project_id}")
+def get_specs(project_id: str):
+    if project_id not in DATABASES:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return DATABASES[project_id]["specs"]
 
 @app.post("/api/chat")
 async def chat_with_concierge(payload: ChatRequest):
-    task = project_state.get(payload.task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    project_db = DATABASES.get(payload.project_id, DATABASES["sunchemical"])
+    task = next((t for t in project_db["graph"] if t["id"] == payload.task_id), None)
+    task_title = task["title"] if task else payload.task_id
+    task_criteria = task["criteria"] if task else "Standard project prerequisite guidelines"
 
     prompt = f"""
-    You are PrereqCopilot Concierge. A technical stakeholder is asking for help with this task:
-    Task ID: {task.id}
-    Title: {task.title}
-    Criteria: {task.criteria}
-    Owner: {task.owner}
-
+    You are the smartShift PrereqCopilot Concierge for project: {payload.project_id}.
+    Task ID: {payload.task_id}
+    Title: {task_title}
+    Criteria: {task_criteria}
     User Question: {payload.message}
-    Provide clear, professional, step-by-step instructions (max 3-4 bullet points).
+
+    Provide 3 concise, highly actionable technical steps to complete or unblock this task.
     """
 
     if client:
@@ -182,23 +223,41 @@ async def chat_with_concierge(payload: ChatRequest):
         except Exception:
             pass
 
-    # Intelligent deterministic mock responses matching actual task context
-    responses = {
-        "TASK-IAM": f"• Open AWS IAM Console -> Roles -> Create Role.\n• Attach custom policy with Describe/Read/Write scoped to staging ARN.\n• Add trust relationship with EC2 Bastion instance.\n• Criteria: {task.criteria}",
-        "TASK-VPN": f"• Provision IPsec Virtual Private Gateway on VPC.\n• Download configuration template for Fortinet/Cisco ASA.\n• Verify Phase 1 (IKEv2) and Phase 2 (ESP) security associations are active.\n• Criteria: {task.criteria}",
-        "TASK-FW": f"• Navigate to Security Groups -> Inbound Rules.\n• Add TCP 443 & 8443 for 10.240.0.0/16.\n• Whitelist Bastion IP 198.51.100.24 for port 22.\n• Criteria: {task.criteria}"
+    # Contextual fallback guidance for Sunchemical
+    fallbacks = {
+        "TASK-ONB": "• Verify project charter signatures in DocuSign.\n• Confirm SAP ERP S/4HANA conversion scope is frozen.\n• Ensure customer project sponsor and smartShift PM have scheduled weekly syncs.",
+        "TASK-VPN": "• Download SonicWall Connect Tunnel client version 12.4+.\n• Connect to vpn.sunchemical.com using Azure AD credentials.\n• Ensure routing to 10.140.8.0/22 is established and pingable.",
+        "TASK-USR": "• Open the customer Google Sheet link in the Specification Artifacts tab.\n• Fill out Developer ID, Corporate Email, and SAP User ID mappings.\n• Request SecOps signoff once all entries are populated.",
+        "TASK-SYS": "• Configure SAP Router string: /H/198.51.100.25/S/3299.\n• Ensure port 3299 is open through inbound firewall rules.\n• Perform telnet/ncat check against target application server.",
+        "TASK-CERT": "• Request Sunchemical enterprise root CA certificate bundle.\n• Install certificate to local trusted root store and browser.\n• Verify HTTPS handshake against staging gateway without security warnings.",
+        "TASK-TR-MIG": "• Verify smartShift Rule 232 freeze window deadline.\n• Review object mapping list for custom Z-programs.\n• Obtain dual-control approval from technical lead.",
+        "TASK-TOC": "• Export Transport of Copies (ToC) from dev workbench.\n• Use transaction STMS to import ToC into target validation client.\n• Check import logs for RC=0 or RC=4 return codes.",
+        "TASK-TR-REL": "• Open the smartShift 3-Way Differ URL (retrofit SST-8518).\n• Complete the side-by-side reconciliation check.\n• Execute final release signoff to unblock production cutover."
     }
-    return {"reply": responses.get(task.id, f"• Complete task prerequisites per runbook.\n• Acceptance criteria requires: {task.criteria}\n• Upload verification proof when done.")}
+
+    return {
+        "reply": fallbacks.get(
+            payload.task_id,
+            f"• Follow standard runbook for {task_title}.\n• Requirement: {task_criteria}\n• Submit artifact screenshot for automated verification."
+        )
+    }
 
 @app.post("/api/verify")
-async def verify_artifact(task_id: str = Form(...), file: UploadFile = File(...)):
-    task = project_state.get(task_id)
+async def verify_artifact(
+    task_id: str = Form(...),
+    project_id: str = Form("sunchemical"),
+    file: UploadFile = File(...)
+):
+    project_db = DATABASES.get(project_id, DATABASES["sunchemical"])
+    graph = project_db["graph"]
+
+    task = next((t for t in graph if t["id"] == task_id), None)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
     image_bytes = await file.read()
     verified = True
-    reason = f"Proof artifact '{file.filename}' satisfied all acceptance requirements for {task.id}."
+    reason = f"Verification artifact '{file.filename}' satisfied all acceptance requirements for {task['title']}."
 
     if client:
         try:
@@ -208,8 +267,14 @@ async def verify_artifact(task_id: str = Form(...), file: UploadFile = File(...)
                 messages=[{
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": f"Strict IT compliance auditor. Verify if image satisfies: '{task.criteria}'. Respond ONLY JSON: {{\"verified\": true/false, \"reason\": \"str\"}}"},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
+                        {
+                            "type": "text",
+                            "text": f"Strict IT compliance auditor. Verify if this proof screenshot satisfies: '{task['criteria']}'. Respond ONLY JSON: {{\"verified\": true/false, \"reason\": \"str\"}}"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}
+                        }
                     ]
                 }]
             )
@@ -220,16 +285,15 @@ async def verify_artifact(task_id: str = Form(...), file: UploadFile = File(...)
             pass
 
     if verified:
-        task.status = "COMPLETED"
-        # Autonomous unblock logic across the entire DAG
-        for t in project_state.values():
-            if t.status == "BLOCKED":
-                if all(project_state[dep].status == "COMPLETED" for dep in t.blocked_by):
-                    t.status = "READY"
+        task["status"] = "COMPLETED"
+        for t in graph:
+            if t["status"] == "BLOCKED":
+                if all(next(x["status"] for x in graph if x["id"] == dep) == "COMPLETED" for dep in t["blocked_by"]):
+                    t["status"] = "READY"
 
     return {
         "task_id": task_id,
         "verified": verified,
         "reason": reason,
-        "updated_graph": list(project_state.values())
+        "updated_graph": graph
     }
