@@ -163,6 +163,25 @@ nestle_stakeholders = {
     "Clearance": ["Executive"]
 }
 
+# --- SHELL STAKEHOLDERS ---
+shell_stakeholders = {
+    "User ID": ["EMP-9002", "EMP-8021", "EMP-7033"],
+    "Name": ["Marcus Van Der Berg", "Ashish Gupta", "Anil Kumar Palle"],
+    "Organization": ["Shell", "smartShift", "smartShift"],
+    "Role": ["IT Infrastructure Director", "Lead Architect", "Project Manager"],
+    "Clearance": ["Executive L4", "Lead Admin", "Project Manager"]
+}
+
+# --- IBERDROLA STAKEHOLDERS ---
+iberdrola_stakeholders = {
+    "User ID": ["EMP-4421", "EMP-8021", "EMP-7033"],
+    "Name": ["Carlos Gutierrez", "Ashish Gupta", "Anil Kumar Palle"],
+    "Organization": ["Iberdrola", "smartShift", "smartShift"],
+    "Role": ["Cybersecurity Manager", "Project Lead", "Project Manager"],
+    "Clearance": ["Security Officer", "Lead Admin", "Project Manager"]
+}
+
+
 # Generate workbooks
 write_project_workbook("sunchemical.xlsx", sunchemical_tasks, sunchemical_rules, sunchemical_vpn, sunchemical_resources, sunchemical_stakeholders)
 write_project_workbook("bayer.xlsx", bayer_tasks, bayer_rules, bayer_vpn, bayer_resources, bayer_stakeholders)
