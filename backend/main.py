@@ -14,12 +14,9 @@ load_dotenv()
 groq_api_key = os.getenv("GROQ_API_KEY")
 client = None
 if groq_api_key:
-    client = Groq(
-        api_key=groq_api_key,
-        http_client=httpx.Client(verify=False)
-    )
+    client = Groq(api_key=groq_api_key, http_client=httpx.Client(verify=False))
 
-app = FastAPI(title="PrereqCopilot API - smartShift Edition")
+app = FastAPI(title="PrequeCo API - smartShift Orchestrator")
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,98 +31,18 @@ class ChatRequest(BaseModel):
     message: str
     project_id: Optional[str] = "sunchemical"
 
-# ----------------- Multi-Project Database -----------------
+# ----------------- Multi-Project Enterprise Database -----------------
 DATABASES = {
     "sunchemical": {
         "graph": [
-            {
-                "id": "TASK-ONB",
-                "title": "Project Onboarding",
-                "owner": "smartShift PM",
-                "status": "COMPLETED",
-                "blocked_by": [],
-                "criteria": "Kickoff documents and SOW signed off by Sunchemical and smartShift.",
-                "phase": "Kickoff",
-                "x": 50,
-                "y": 160
-            },
-            {
-                "id": "TASK-VPN",
-                "title": "VPN Rules",
-                "owner": "Customer",
-                "status": "READY",
-                "blocked_by": ["TASK-ONB"],
-                "criteria": "SonicWall Connect Tunnel verified with gateway vpn.sunchemical.com.",
-                "phase": "Foundation",
-                "x": 350,
-                "y": 60
-            },
-            {
-                "id": "TASK-USR",
-                "title": "User Access Sheet",
-                "owner": "Customer",
-                "status": "READY",
-                "blocked_by": ["TASK-ONB"],
-                "criteria": "All consultants and developers mapped in the customer user sheet.",
-                "phase": "Foundation",
-                "x": 350,
-                "y": 260
-            },
-            {
-                "id": "TASK-SYS",
-                "title": "System Setup",
-                "owner": "Internal",
-                "status": "BLOCKED",
-                "blocked_by": ["TASK-VPN", "TASK-USR"],
-                "criteria": "SAP dev & staging landscape reachable through SAP Router 198.51.100.25.",
-                "phase": "Setup",
-                "x": 650,
-                "y": 160
-            },
-            {
-                "id": "TASK-CERT",
-                "title": "Certificate Completion by Users",
-                "owner": "Customer",
-                "status": "BLOCKED",
-                "blocked_by": ["TASK-SYS"],
-                "criteria": "Client SSL/TLS identity certificates distributed and imported to browser keystores.",
-                "phase": "Execution",
-                "x": 950,
-                "y": 60
-            },
-            {
-                "id": "TASK-TR-MIG",
-                "title": "TR Migration Rules",
-                "owner": "Internal",
-                "status": "BLOCKED",
-                "blocked_by": ["TASK-SYS"],
-                "criteria": "smartShift automated migration mapping and rule 232 freeze logic configured.",
-                "phase": "Execution",
-                "x": 950,
-                "y": 260
-            },
-            {
-                "id": "TASK-TOC",
-                "title": "ToC Import",
-                "owner": "Internal",
-                "status": "BLOCKED",
-                "blocked_by": ["TASK-CERT", "TASK-TR-MIG"],
-                "criteria": "Transport of Copies (ToC) imported into shadow sandbox without syntax errors.",
-                "phase": "Delivery",
-                "x": 1250,
-                "y": 160
-            },
-            {
-                "id": "TASK-TR-REL",
-                "title": "TR Release",
-                "owner": "smartShift Release",
-                "status": "BLOCKED",
-                "blocked_by": ["TASK-TOC"],
-                "criteria": "Dual-control release sign-off executed in 3-Way Differ platform.",
-                "phase": "Go-Live",
-                "x": 1550,
-                "y": 160
-            }
+            {"id": "TASK-ONB", "title": "Project Onboarding", "owner": "smartShift PM", "status": "COMPLETED", "blocked_by": [], "criteria": "Kickoff documents and SOW signed off.", "phase": "Kickoff", "x": 50, "y": 160},
+            {"id": "TASK-VPN", "title": "VPN Rules", "owner": "Customer", "status": "READY", "blocked_by": ["TASK-ONB"], "criteria": "SonicWall Connect Tunnel verified with gateway vpn.sunchemical.com.", "phase": "Foundation", "x": 350, "y": 60},
+            {"id": "TASK-USR", "title": "User Access Sheet", "owner": "Customer", "status": "READY", "blocked_by": ["TASK-ONB"], "criteria": "All consultants mapped in customer user sheet.", "phase": "Foundation", "x": 350, "y": 260},
+            {"id": "TASK-SYS", "title": "System Setup", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["TASK-VPN", "TASK-USR"], "criteria": "SAP dev & staging reachable through SAP Router 198.51.100.25.", "phase": "Setup", "x": 650, "y": 160},
+            {"id": "TASK-CERT", "title": "Certificate Completion by Users", "owner": "Customer", "status": "BLOCKED", "blocked_by": ["TASK-SYS"], "criteria": "Client SSL/TLS identity certificates distributed.", "phase": "Execution", "x": 950, "y": 60},
+            {"id": "TASK-TR-MIG", "title": "TR Migration Rules", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["TASK-SYS"], "criteria": "smartShift automated migration mapping and rule 232 freeze logic configured.", "phase": "Execution", "x": 950, "y": 260},
+            {"id": "TASK-TOC", "title": "ToC Import", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["TASK-CERT", "TASK-TR-MIG"], "criteria": "Transport of Copies (ToC) imported into shadow sandbox without syntax errors.", "phase": "Delivery", "x": 1250, "y": 160},
+            {"id": "TASK-TR-REL", "title": "TR Release", "owner": "smartShift Release", "status": "BLOCKED", "blocked_by": ["TASK-TOC"], "criteria": "Dual-control release sign-off executed in 3-Way Differ platform.", "phase": "Go-Live", "x": 1550, "y": 160}
         ],
         "specs": {
             "global_rules": [
@@ -139,78 +56,185 @@ DATABASES = {
                 {"param": "Authentication Protocol", "val": "SAML 2.0 / Azure AD MFA"},
                 {"param": "Assigned Subnet", "val": "10.140.8.0/22"}
             ],
-            "links": [
+"links": [
                 {
-                    "name": "Customer User Access Sheet (Google Sheets)",
-                    "desc": "Live master roster of customer & smartShift mapped credentials",
+                    "name": "Customer User Access Sheet", 
+                    "desc": "Live master roster of customer & smartShift mapped credentials", 
                     "url": "https://docs.google.com/spreadsheets/d/1rzrJIHnkiSZ2V1UCPqCvaxBdrwyGUgY1/edit?pli=1&gid=1254713245#gid=1254713245"
                 },
                 {
-                    "name": "smartShift 3-Way Differ (Retrofit SST-8518)",
-                    "desc": "Code reconciliation, custom code analysis & release diff comparator",
-                    "url": "https://retrofit.smartshift.com/sst8518"
+                    "name": "Prerequisite Checklist", 
+                    "desc": "Official smartShift prerequisites and readiness criteria", 
+                    "url": "https://smartshift.document360.io/docs/prerequisites-checklist-1"
+                },
+                {
+                    "name": "Dual Maintenance Support", 
+                    "desc": "Guidelines for dual-track development and transport sync", 
+                    "url": "https://smartshift.document360.io/docs/dual-maintenance-support"
                 }
             ],
             "users": [
                 {"id": "EMP-8021", "name": "Ashish Gupta", "role": "smartShift Project Lead", "org": "smartShift", "clearance": "Lead Admin"},
-                {"id": "EMP-9412", "name": "Sarah Jenkins", "role": "Customer Network & SecOps Lead", "org": "Sunchemical", "clearance": "Security Approver"},
+                {"id": "EMP-9412", "name": "Sarah Jenkins", "role": "Network SecOps Lead", "org": "Sunchemical", "clearance": "Security Approver"},
                 {"id": "EMP-1049", "name": "Michael Chang", "role": "SAP Basis Architect", "org": "smartShift", "clearance": "System Admin"},
-                {"id": "EMP-3392", "name": "Elena Rostova", "role": "Release & Cutover Specialist", "org": "Sunchemical", "clearance": "Release Signer"}
+                {"id": "EMP-3392", "name": "Elena Rostova", "role": "Release Specialist", "org": "Sunchemical", "clearance": "Release Signer"}
+            ]
+        }
+    },
+    "shell": {
+        "graph": [
+            {"id": "SHL-INIT", "title": "Upstream SOW & Cyber Review", "owner": "smartShift PM", "status": "COMPLETED", "blocked_by": [], "criteria": "Global Cyber Security signoff and contract approved.", "phase": "Kickoff", "x": 50, "y": 160},
+            {"id": "SHL-ZTNA", "title": "Zscaler ZTNA Policy Whitelist", "owner": "Customer", "status": "READY", "blocked_by": ["SHL-INIT"], "criteria": "Zero-Trust private access profile mapped for smartShift subnet.", "phase": "Foundation", "x": 350, "y": 60},
+            {"id": "SHL-IAM", "title": "CyberArk Privileged Access", "owner": "Customer", "status": "READY", "blocked_by": ["SHL-INIT"], "criteria": "Just-In-Time vaulted tokens assigned for SAP production sandbox.", "phase": "Foundation", "x": 350, "y": 260},
+            {"id": "SHL-OIL", "title": "SAP IS-Oil Landscape Bridge", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["SHL-ZTNA", "SHL-IAM"], "criteria": "Downstream hydrocarbon management modules synced.", "phase": "Setup", "x": 650, "y": 160},
+            {"id": "SHL-DIFF", "title": "Hydrocarbon TR Differ Verification", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["SHL-OIL"], "criteria": "3-Way Differ run with 0 critical transport collisions.", "phase": "Execution", "x": 950, "y": 160},
+            {"id": "SHL-REL", "title": "Global Production Release", "owner": "smartShift Release", "status": "BLOCKED", "blocked_by": ["SHL-DIFF"], "criteria": "Final executive signoff and cutover execution.", "phase": "Go-Live", "x": 1250, "y": 160}
+        ],
+        "specs": {
+            "global_rules": [
+                {"id": "SHL-SEC-90", "desc": "Mandatory CyberArk session recording for all staging DB operations", "status": "Enforced"},
+                {"id": "SHL-RULE-12", "desc": "Hydrocarbon custom transport validation freeze 72h before sprint", "status": "Active"}
+            ],
+            "vpn": [
+                {"param": "VPN Architecture", "val": "Zscaler Private Access (ZPA)"},
+                {"param": "Broker Gateway", "val": "secure-access.shell.com"},
+                {"param": "MFA Provider", "val": "Microsoft Authenticator FIDO2"},
+                {"param": "Authorized IP Block", "val": "172.28.0.0/14"}
+            ],
+"links": [
+                {
+                    "name": "Customer User Access Sheet", 
+                    "desc": "Live master roster of customer & smartShift mapped credentials", 
+                    "url": "https://docs.google.com/spreadsheets/d/1rzrJIHnkiSZ2V1UCPqCvaxBdrwyGUgY1/edit?pli=1&gid=1254713245#gid=1254713245"
+                },
+                {
+                    "name": "Prerequisite Checklist", 
+                    "desc": "Official smartShift prerequisites and readiness criteria", 
+                    "url": "https://smartshift.document360.io/docs/prerequisites-checklist-1"
+                },
+                {
+                    "name": "Dual Maintenance Support", 
+                    "desc": "Guidelines for dual-track development and transport sync", 
+                    "url": "https://smartshift.document360.io/docs/dual-maintenance-support"
+                }
+            ],
+            "users": [
+                {"id": "SHL-4109", "name": "Marcus Vance", "role": "IT Security Director", "org": "Shell", "clearance": "VP Security"},
+                {"id": "EMP-8021", "name": "Ashish Gupta", "role": "smartShift Engagement Lead", "org": "smartShift", "clearance": "Lead Admin"}
+            ]
+        }
+    },
+    "iberdrola": {
+        "graph": [
+            {"id": "IBD-ONB", "title": "Renewables Grid Project Setup", "owner": "smartShift PM", "status": "COMPLETED", "blocked_by": [], "criteria": "Critical Infrastructure Protection (CIP) compliance validated.", "phase": "Kickoff", "x": 50, "y": 160},
+            {"id": "IBD-VPN", "title": "Check Point Endpoint Security", "owner": "Customer", "status": "READY", "blocked_by": ["IBD-ONB"], "criteria": "Check Point VPN tunnel verified to Madrid datacenter.", "phase": "Foundation", "x": 350, "y": 60},
+            {"id": "IBD-SCADA", "title": "SCADA Network Firewall Routing", "owner": "Customer", "status": "READY", "blocked_by": ["IBD-ONB"], "criteria": "Ingress port 443 / 8443 open for renewable telemetry ingest.", "phase": "Foundation", "x": 350, "y": 260},
+            {"id": "IBD-SYS", "title": "SAP Utilities (IS-U) Mount", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["IBD-VPN", "IBD-SCADA"], "criteria": "Staging IS-U cluster communicating with smartShift engine.", "phase": "Setup", "x": 650, "y": 160},
+            {"id": "IBD-TR", "title": "ToC Extraction & Signoff", "owner": "smartShift Release", "status": "BLOCKED", "blocked_by": ["IBD-SYS"], "criteria": "Transport release signed by European energy compliance board.", "phase": "Go-Live", "x": 950, "y": 160}
+        ],
+        "specs": {
+            "global_rules": [
+                {"id": "IBD-CIP-04", "desc": "EU Critical Infrastructure Protection: No unencrypted traffic permitted", "status": "Enforced"},
+                {"id": "IBD-RULE-77", "desc": "Energy trading cutover window: strictly Sunday 00:00 - 04:00 CET", "status": "Active"}
+            ],
+            "vpn": [
+                {"param": "VPN Technology", "val": "Check Point Remote Access Capsule"},
+                {"param": "Gateway Host", "val": "vpn.iberdrola.es"},
+                {"param": "Authentication", "val": "SmartCard + PIN / Entra ID"},
+                {"param": "Target Network", "val": "10.88.0.0/16"}
+            ],
+"links": [
+                {
+                    "name": "Customer User Access Sheet", 
+                    "desc": "Live master roster of customer & smartShift mapped credentials", 
+                    "url": "https://docs.google.com/spreadsheets/d/1rzrJIHnkiSZ2V1UCPqCvaxBdrwyGUgY1/edit?pli=1&gid=1254713245#gid=1254713245"
+                },
+                {
+                    "name": "Prerequisite Checklist", 
+                    "desc": "Official smartShift prerequisites and readiness criteria", 
+                    "url": "https://smartshift.document360.io/docs/prerequisites-checklist-1"
+                },
+                {
+                    "name": "Dual Maintenance Support", 
+                    "desc": "Guidelines for dual-track development and transport sync", 
+                    "url": "https://smartshift.document360.io/docs/dual-maintenance-support"
+                }
+            ],
+            "users": [
+                {"id": "IBD-9021", "name": "Javier Gomez", "role": "SAP Infrastructure Architect", "org": "Iberdrola", "clearance": "CIP Level 3"},
+                {"id": "EMP-8021", "name": "Ashish Gupta", "role": "smartShift Lead", "org": "smartShift", "clearance": "Lead Admin"}
             ]
         }
     },
     "bayer": {
         "graph": [
-            {"id": "BAY-KICK", "title": "Bayer Project Kickoff", "owner": "smartShift PM", "status": "READY", "blocked_by": [], "criteria": "Statement of Work signed.", "phase": "Kickoff", "x": 60, "y": 160},
-            {"id": "BAY-CODE", "title": "Custom Code Extraction", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["BAY-KICK"], "criteria": "ECC 6.0 custom packages pulled.", "phase": "Extraction", "x": 380, "y": 160}
+            {"id": "BAY-KICK", "title": "Bayer Project Kickoff", "owner": "smartShift PM", "status": "COMPLETED", "blocked_by": [], "criteria": "Statement of Work signed.", "phase": "Kickoff", "x": 50, "y": 160},
+            {"id": "BAY-VPN", "title": "GxP VPN Setup", "owner": "Customer", "status": "READY", "blocked_by": ["BAY-KICK"], "criteria": "Cisco AnyConnect configured for GxP network.", "phase": "Foundation", "x": 350, "y": 160},
+            {"id": "BAY-CODE", "title": "Custom Code Extraction", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["BAY-VPN"], "criteria": "ECC 6.0 custom packages pulled.", "phase": "Extraction", "x": 650, "y": 160}
         ],
         "specs": {
             "global_rules": [{"id": "BAY-RULE-01", "desc": "Pharma GxP Audit Trace Enforced", "status": "Active"}],
-            "vpn": [{"param": "VPN Client", "val": "Cisco AnyConnect"}, {"param": "Gateway", "val": "vpn.bayer.com"}],
+            "vpn": [{"param": "VPN Client", "val": "Cisco AnyConnect"}, {"param": "Gateway IP", "val": "vpn.bayer.com"}, {"param": "Auth", "val": "RSA SecurID"}],
             "links": [{"name": "Bayer Runbook", "desc": "Internal portal", "url": "https://retrofit.smartshift.com"}],
             "users": [{"id": "EMP-5501", "name": "David Mueller", "role": "Compliance Officer", "org": "Bayer", "clearance": "GxP Auditor"}]
         }
     },
     "nestle": {
         "graph": [
-            {"id": "NES-ONB", "title": "Nestlé Global Access", "owner": "Customer", "status": "READY", "blocked_by": [], "criteria": "OAuth tokens provisioned.", "phase": "Kickoff", "x": 60, "y": 160}
+            {"id": "NES-ONB", "title": "Nestlé Global Access", "owner": "Customer", "status": "READY", "blocked_by": [], "criteria": "Palo Alto GlobalProtect tokens provisioned.", "phase": "Kickoff", "x": 50, "y": 160},
+            {"id": "NES-MIG", "title": "Global System Provisioning", "owner": "Internal", "status": "BLOCKED", "blocked_by": ["NES-ONB"], "criteria": "Target regional sandbox instances mounted.", "phase": "Setup", "x": 350, "y": 160}
         ],
         "specs": {
-            "global_rules": [{"id": "NES-RULE-09", "desc": "SAP S/4HANA Migration Window Lockdown", "status": "Pending"}],
-            "vpn": [{"param": "VPN Client", "val": "GlobalProtect"}, {"param": "Gateway", "val": "vpn.nestle.com"}],
-            "links": [{"name": "Nestlé Architecture", "desc": "Confluence wiki", "url": "https://retrofit.smartshift.com"}],
-            "users": [{"id": "EMP-7712", "name": "Claire Dubois", "role": "SAP Transformation Lead", "org": "Nestlé", "clearance": "Executive"}]
+            "global_rules": [{"id": "NES-RULE-09", "desc": "SAP S/4HANA Migration Window Lockdown", "status": "Active"}],
+            "vpn": [{"param": "VPN Client", "val": "Palo Alto GlobalProtect"}, {"param": "Gateway IP", "val": "gateway.nestle.com"}, {"param": "Auth", "val": "Okta SSO"}],
+            "links": [{"name": "Nestlé Architecture", "desc": "Confluence portal", "url": "https://retrofit.smartshift.com"}],
+            "users": [{"id": "EMP-7712", "name": "Claire Dubois", "role": "Transformation Lead", "org": "Nestlé", "clearance": "Executive"}]
         }
     }
 }
 
+@app.get("/api/projects")
+def get_projects():
+    return {
+        "projects": [
+            {"id": "sunchemical", "name": "Sunchemical"},
+            {"id": "shell", "name": "Shell"},
+            {"id": "iberdrola", "name": "Iberdrola"},
+            {"id": "bayer", "name": "Bayer (Demo)"},
+            {"id": "nestle", "name": "Nestlé (Demo)"}
+        ]
+    }
+
 @app.get("/api/graph/{project_id}")
 def get_graph(project_id: str):
-    if project_id not in DATABASES:
+    pid = project_id.lower()
+    if pid not in DATABASES:
         raise HTTPException(status_code=404, detail="Project not found")
-    return {"tasks": DATABASES[project_id]["graph"]}
+    return {"tasks": DATABASES[pid]["graph"]}
 
 @app.get("/api/specs/{project_id}")
 def get_specs(project_id: str):
-    if project_id not in DATABASES:
+    pid = project_id.lower()
+    if pid not in DATABASES:
         raise HTTPException(status_code=404, detail="Project not found")
-    return DATABASES[project_id]["specs"]
+    return DATABASES[pid]["specs"]
 
 @app.post("/api/chat")
 async def chat_with_concierge(payload: ChatRequest):
-    project_db = DATABASES.get(payload.project_id, DATABASES["sunchemical"])
-    task = next((t for t in project_db["graph"] if t["id"] == payload.task_id), None)
+    pid = payload.project_id.lower()
+    project = DATABASES.get(pid, DATABASES["sunchemical"])
+    task = next((t for t in project["graph"] if t["id"] == payload.task_id), None)
     task_title = task["title"] if task else payload.task_id
-    task_criteria = task["criteria"] if task else "Standard project prerequisite guidelines"
+    task_criteria = task["criteria"] if task else "Standard prerequisite criteria"
 
     prompt = f"""
-    You are the smartShift PrereqCopilot Concierge for project: {payload.project_id}.
+    You are the smartShift PrequeCo Concierge for project: {pid}.
     Task ID: {payload.task_id}
     Title: {task_title}
     Criteria: {task_criteria}
     User Question: {payload.message}
 
-    Provide 3 concise, highly actionable technical steps to complete or unblock this task.
+    Provide 3 concise, highly actionable technical steps to complete or unblock this requirement.
     """
 
     if client:
@@ -223,23 +247,8 @@ async def chat_with_concierge(payload: ChatRequest):
         except Exception:
             pass
 
-    # Contextual fallback guidance for Sunchemical
-    fallbacks = {
-        "TASK-ONB": "• Verify project charter signatures in DocuSign.\n• Confirm SAP ERP S/4HANA conversion scope is frozen.\n• Ensure customer project sponsor and smartShift PM have scheduled weekly syncs.",
-        "TASK-VPN": "• Download SonicWall Connect Tunnel client version 12.4+.\n• Connect to vpn.sunchemical.com using Azure AD credentials.\n• Ensure routing to 10.140.8.0/22 is established and pingable.",
-        "TASK-USR": "• Open the customer Google Sheet link in the Specification Artifacts tab.\n• Fill out Developer ID, Corporate Email, and SAP User ID mappings.\n• Request SecOps signoff once all entries are populated.",
-        "TASK-SYS": "• Configure SAP Router string: /H/198.51.100.25/S/3299.\n• Ensure port 3299 is open through inbound firewall rules.\n• Perform telnet/ncat check against target application server.",
-        "TASK-CERT": "• Request Sunchemical enterprise root CA certificate bundle.\n• Install certificate to local trusted root store and browser.\n• Verify HTTPS handshake against staging gateway without security warnings.",
-        "TASK-TR-MIG": "• Verify smartShift Rule 232 freeze window deadline.\n• Review object mapping list for custom Z-programs.\n• Obtain dual-control approval from technical lead.",
-        "TASK-TOC": "• Export Transport of Copies (ToC) from dev workbench.\n• Use transaction STMS to import ToC into target validation client.\n• Check import logs for RC=0 or RC=4 return codes.",
-        "TASK-TR-REL": "• Open the smartShift 3-Way Differ URL (retrofit SST-8518).\n• Complete the side-by-side reconciliation check.\n• Execute final release signoff to unblock production cutover."
-    }
-
     return {
-        "reply": fallbacks.get(
-            payload.task_id,
-            f"• Follow standard runbook for {task_title}.\n• Requirement: {task_criteria}\n• Submit artifact screenshot for automated verification."
-        )
+        "reply": f"• Procedural instruction for {task_title}:\n• Required: {task_criteria}\n• Once applied in the environment, upload proof screenshot above."
     }
 
 @app.post("/api/verify")
@@ -248,8 +257,9 @@ async def verify_artifact(
     project_id: str = Form("sunchemical"),
     file: UploadFile = File(...)
 ):
-    project_db = DATABASES.get(project_id, DATABASES["sunchemical"])
-    graph = project_db["graph"]
+    pid = project_id.lower()
+    project = DATABASES.get(pid, DATABASES["sunchemical"])
+    graph = project["graph"]
 
     task = next((t for t in graph if t["id"] == task_id), None)
     if not task:
@@ -267,14 +277,8 @@ async def verify_artifact(
                 messages=[{
                     "role": "user",
                     "content": [
-                        {
-                            "type": "text",
-                            "text": f"Strict IT compliance auditor. Verify if this proof screenshot satisfies: '{task['criteria']}'. Respond ONLY JSON: {{\"verified\": true/false, \"reason\": \"str\"}}"
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}
-                        }
+                        {"type": "text", "text": f"Strict IT auditor. Inspect screenshot. Verify if it meets: '{task['criteria']}'. Return JSON: {{\"verified\": true, \"reason\": \"string\"}}"},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
                     ]
                 }]
             )
