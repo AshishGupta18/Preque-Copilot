@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -280,12 +280,9 @@ export default function App() {
   const [edges, setEdges] = useState([]);
   const nodeTypes = useMemo(() => ({ taskNode: TaskNodeComponent }), []);
 
-  const [chatMessages, setChatMessages] = useState([
-    {
-      sender: 'agent',
-      text: 'smartShift PrereqCopilot active for Sunchemical. Click any node in the dependency web to view criteria or ask procedural questions.'
-    }
-  ]);
+  const [chatSessions, setChatSessions] = useState({});
+  const currentChatKey = `${activeProject}:${selectedTaskId}`;
+  const chatMessages = useMemo(() => chatSessions[currentChatKey]?.messages || [], [chatSessions, currentChatKey]);
   const [inputQuery, setInputQuery] = useState('');
   const [loadingChat, setLoadingChat] = useState(false);
   const chatBottomRef = useRef(null);
@@ -397,27 +394,31 @@ export default function App() {
   const activeTask = tasks.find((t) => t.id === selectedTaskId) || tasks[0];
 
   const handleSendMessage = async () => {
-    if (!inputQuery.trim()) return;
-    const userMsg = inputQuery;
-    setChatMessages((prev) => [...prev, { sender: 'user', text: userMsg }]);
+    if (!inputQuery.trim() || loadingChat || !activeTask) return;
+    const key = currentChatKey;
+    const session = chatSessions[key] || { messages: [], interactionId: null };
+    const userMsg = inputQuery.trim();
+    const messages = [...session.messages, { sender: 'user', text: userMsg }];
+    setChatSessions((prev) => ({ ...prev, [key]: { ...session, messages } }));
     setInputQuery('');
     setLoadingChat(true);
 
     try {
       const res = await axios.post(`${API_BASE}/chat`, {
-        task_id: selectedTaskId,
+        task_id: activeTask.id,
         message: userMsg,
-        project_id: activeProject
+        project_id: activeProject,
+        previous_interaction_id: session.interactionId
       });
-      setChatMessages((prev) => [...prev, { sender: 'agent', text: res.data.reply }]);
-    } catch {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: 'agent',
-          text: `• Follow standard procedural runbook for ${activeTask?.title}.\n• Requirement: ${activeTask?.criteria}\n• Upload proof screenshot once complete.`
-        }
-      ]);
+      setChatSessions((prev) => ({ ...prev, [key]: {
+        interactionId: res.data.interaction_id,
+        messages: [...messages, { sender: 'agent', text: res.data.reply }]
+      } }));
+    } catch (error) {
+      setChatSessions((prev) => ({ ...prev, [key]: { ...session, messages: [...messages, {
+        sender: 'agent',
+        text: error.response?.data?.detail || 'Unable to reach Concierge. Check that the backend is running and retry.'
+      }] } }));
     } finally {
       setLoadingChat(false);
     }
@@ -674,7 +675,7 @@ export default function App() {
                 {loadingChat && (
                   <div className={`text-xs italic flex items-center gap-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>
                     <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-                    Concierge analyzing runbooks...
+                    Concierge asking Gemini...
                   </div>
                 )}
                 <div ref={chatBottomRef} />
@@ -693,6 +694,7 @@ export default function App() {
                 />
                 <button
                   onClick={handleSendMessage}
+                  disabled={loadingChat || !inputQuery.trim()}
                   className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center justify-center shadow-sm"
                 >
                   <Send className="w-3.5 h-3.5" />
