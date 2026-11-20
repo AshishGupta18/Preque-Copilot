@@ -25,161 +25,18 @@ import {
   ExternalLink,
   Briefcase,
   Users,
-  Cloud
+  Cloud,
+  RotateCcw,
+  UserCheck,
+  Server,
+  Mail,
+  BellRing
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:8000/api' : '/api';
 
-// ----------------- Default Enterprise Project Topologies -----------------
-const FALLBACK_PROJECTS = {
-  sunchemical: {
-    tasks: [
-      { id: 'TASK-ONB', title: 'Project Onboarding', owner: 'smartShift PM', status: 'COMPLETED', blocked_by: [], criteria: 'Kickoff documents and SOW signed off.', phase: 'Kickoff', x: 50, y: 160 },
-      { id: 'TASK-VPN', title: 'VPN Rules', owner: 'Customer', status: 'READY', blocked_by: ['TASK-ONB'], criteria: 'SonicWall Connect Tunnel verified with gateway vpn.sunchemical.com.', phase: 'Foundation', x: 350, y: 60 },
-      { id: 'TASK-USR', title: 'User Access Sheet', owner: 'Customer', status: 'READY', blocked_by: ['TASK-ONB'], criteria: 'All consultants and developers mapped in Google Sheet.', phase: 'Foundation', x: 350, y: 260 },
-      { id: 'TASK-SYS', title: 'System Setup', owner: 'Internal', status: 'BLOCKED', blocked_by: ['TASK-VPN', 'TASK-USR'], criteria: 'SAP dev & staging landscape reachable through SAP Router.', phase: 'Setup', x: 650, y: 160 },
-      { id: 'TASK-CERT', title: 'Certificate Completion by Users', owner: 'Customer', status: 'BLOCKED', blocked_by: ['TASK-SYS'], criteria: 'Client identity certificates distributed to keystores.', phase: 'Execution', x: 950, y: 60 },
-      { id: 'TASK-TR-MIG', title: 'TR Migration Rules', owner: 'Internal', status: 'BLOCKED', blocked_by: ['TASK-SYS'], criteria: 'smartShift automated migration mapping configured.', phase: 'Execution', x: 950, y: 260 },
-      { id: 'TASK-TOC', title: 'ToC Import', owner: 'Internal', status: 'BLOCKED', blocked_by: ['TASK-CERT', 'TASK-TR-MIG'], criteria: 'Transport of Copies (ToC) imported into shadow sandbox.', phase: 'Delivery', x: 1250, y: 160 },
-      { id: 'TASK-TR-REL', title: 'TR Release', owner: 'smartShift Release', status: 'BLOCKED', blocked_by: ['TASK-TOC'], criteria: 'Dual-control release sign-off executed in 3-Way Differ.', phase: 'Go-Live', x: 1550, y: 160 }
-    ],
-    specs: {
-      global_rules: [
-        { id: 'SS-RULE-232', desc: 'Code Freeze Deadline: TR cut-off strictly 48h prior to sprint release', status: 'Applied - Pre-Deadline' },
-        { id: 'SS-RULE-045', desc: 'Customer SAP Router Whitelist: Only TLS port 3299 traffic permitted', status: 'Active' },
-        { id: 'SS-RULE-101', desc: 'Dual-Control TR Release: Requires 1 internal + 1 customer signoff', status: 'Enforced' }
-      ],
-      vpn: [
-        { param: 'VPN Client', val: 'SonicWall Connect Tunnel' },
-        { param: 'Gateway IP', val: 'vpn.sunchemical.com' },
-        { param: 'Authentication Protocol', val: 'SAML 2.0 / Azure AD MFA' },
-        { param: 'Assigned Subnet', val: '10.140.8.0/22' }
-      ],
-     links: [
-        {
-          name: 'Customer User Access Sheet',
-          desc: 'Master roster of customer & smartShift credentials',
-          url: 'https://docs.google.com/spreadsheets/d/1rzrJIHnkiSZ2V1UCPqCvaxBdrwyGUgY1/edit?pli=1&gid=1254713245#gid=1254713245'
-        },
-        {
-          name: 'Prerequisite Checklist',
-          desc: 'Official smartShift prerequisites and readiness criteria',
-          url: 'https://smartshift.document360.io/docs/prerequisites-checklist-1'
-        },
-        {
-          name: 'Dual Maintenance Support',
-          desc: 'Guidelines for dual-track development and transport sync',
-          url: 'https://smartshift.document360.io/docs/dual-maintenance-support'
-        }
-      ],
-      users: [
-        { id: 'SSTI0593', name: 'Ashish Gupta', org: 'smartShift', role: 'Project Lead', clearance: 'Lead Admin' },
-        { id: 'EMP-9412', name: 'Sarah Jenkins', org: 'Sunchemical', role: 'Network & SecOps Lead', clearance: 'Security Approver' },
-        { id: 'SSTI0603', name: 'Shubham Saurav', org: 'smartShift', role: 'SAP Basis Architect', clearance: 'System Admin' },
-        { id: 'EMP-3392', name: 'Elena Rostova', org: 'Sunchemical', role: 'Release Specialist', clearance: 'Release Signer' }
-      ]
-    }
-  },
-  shell: {
-    tasks: [
-      { id: 'SHL-KICK', title: 'Global Architecture Kickoff', owner: 'smartShift PM', status: 'COMPLETED', blocked_by: [], criteria: 'Upstream IT scoping document validated.', phase: 'Kickoff', x: 50, y: 160 },
-      { id: 'SHL-VPN', title: 'AWS DirectConnect & VPN Mesh', owner: 'Customer', status: 'READY', blocked_by: ['SHL-KICK'], criteria: 'IPsec BGP peering active with Shell Energy Cloud.', phase: 'Access', x: 350, y: 160 },
-      { id: 'SHL-SEC', title: 'Critical Infrastructure Clearance', owner: 'Customer', status: 'BLOCKED', blocked_by: ['SHL-VPN'], criteria: 'NERC-CIP Level 4 cyber audit approved.', phase: 'Compliance', x: 650, y: 160 },
-      { id: 'SHL-CODE', title: 'Modernization TR Pipeline', owner: 'Internal', status: 'BLOCKED', blocked_by: ['SHL-SEC'], criteria: 'Automated remediation of custom Z-code executed.', phase: 'Execution', x: 950, y: 160 },
-      { id: 'SHL-GO', title: 'Production Cutover', owner: 'smartShift Release', status: 'BLOCKED', blocked_by: ['SHL-CODE'], criteria: 'Production delta migration verified 100%.', phase: 'Go-Live', x: 1250, y: 160 }
-    ],
-    specs: {
-      global_rules: [
-        { id: 'SHL-SEC-901', desc: 'Zero Trust Network Architecture (ZTNA) strict validation', status: 'Enforced' },
-        { id: 'SHL-OIL-012', desc: 'Hazardous Operations IT/OT air-gap compliance barrier', status: 'Active' }
-      ],
-      vpn: [
-        { param: 'VPN Client', val: 'Cisco AnyConnect / AWS Client VPN' },
-        { param: 'Gateway IP', val: 'secure.shell.com' },
-        { param: 'MFA Provider', val: 'Duo Security Enterprise Push' }
-      ],
-links: [
-        {
-          name: 'Prerequisite Checklist',
-          desc: 'Official smartShift prerequisites and readiness criteria',
-          url: 'https://smartshift.document360.io/docs/prerequisites-checklist-1'
-        },
-        {
-          name: 'Dual Maintenance Support',
-          desc: 'Guidelines for dual-track development and transport sync',
-          url: 'https://smartshift.document360.io/docs/dual-maintenance-support'
-        }
-      ],
-      users: [
-        { id: 'EMP-9002', name: 'Michael Yang', org: 'Shell', role: 'IT Infrastructure Director', clearance: 'Executive L4' },
-        { id: 'SSTI0180', name: 'Anil Kumar Palle', org: 'smartShift', role: 'Lead Architect', clearance: 'Lead Admin' }
-      ]
-    }
-  },
-  iberdrola: {
-    tasks: [
-      { id: 'IBD-ONB', title: 'Renewables Grid Scoping', owner: 'smartShift PM', status: 'COMPLETED', blocked_by: [], criteria: 'Smart grid modernization charter authorized.', phase: 'Kickoff', x: 50, y: 160 },
-      { id: 'IBD-NET', title: 'GlobalProtect Access Gate', owner: 'Customer', status: 'READY', blocked_by: ['IBD-ONB'], criteria: 'Palo Alto GlobalProtect tunnel verified.', phase: 'Security', x: 350, y: 160 },
-      { id: 'IBD-IAM', title: 'S/4HANA Staging Credentials', owner: 'Customer', status: 'BLOCKED', blocked_by: ['IBD-NET'], criteria: 'OAuth2 technical users registered in Azure AD.', phase: 'Foundation', x: 650, y: 160 },
-      { id: 'IBD-TR', title: 'Transport Batch Migration', owner: 'Internal', status: 'BLOCKED', blocked_by: ['IBD-IAM'], criteria: 'Batch migration package validated via smartShift engine.', phase: 'Execution', x: 950, y: 160 }
-    ],
-    specs: {
-      global_rules: [
-        { id: 'IBD-EU-44', desc: 'EU NIS2 Directive Critical Infrastructure Cyber Compliance', status: 'Enforced' },
-        { id: 'IBD-SAP-09', desc: 'Clean Core ERP Guideline: Zero modifications to SAP standard', status: 'Active' }
-      ],
-      vpn: [
-        { param: 'VPN Client', val: 'Palo Alto GlobalProtect' },
-        { param: 'Gateway IP', val: 'vpn-eu.iberdrola.es' },
-        { param: 'Protocol', val: 'IKEv2 / ESP with AES-256' }
-      ],
-     links: [
-        {
-          name: 'Prerequisite Checklist',
-          desc: 'Official smartShift prerequisites and readiness criteria',
-          url: 'https://smartshift.document360.io/docs/prerequisites-checklist-1'
-        },
-        {
-          name: 'Dual Maintenance Support',
-          desc: 'Guidelines for dual-track development and transport sync',
-          url: 'https://smartshift.document360.io/docs/dual-maintenance-support'
-        }
-      ],
-      users: [
-        { id: 'EMP-4421', name: 'Carlos Gutierrez', org: 'Iberdrola', role: 'Cybersecurity Manager', clearance: 'Security Officer' },
-        { id: 'SSTI0400', name: 'Anil Kumar Palle', org: 'smartShift', role: 'Project Lead', clearance: 'Lead Admin' }
-      ]
-    }
-  },
-  bayer: {
-    tasks: [
-      { id: 'BAY-KICK', title: 'Bayer Kickoff', owner: 'smartShift PM', status: 'COMPLETED', blocked_by: [], criteria: 'SOW signed.', phase: 'Kickoff', x: 50, y: 160 },
-      { id: 'BAY-CODE', title: 'Custom Code Extraction', owner: 'Internal', status: 'READY', blocked_by: ['BAY-KICK'], criteria: 'ECC 6.0 custom packages pulled.', phase: 'Extraction', x: 350, y: 160 }
-    ],
-    specs: {
-      global_rules: [{ id: 'BAY-RULE-01', desc: 'Pharma GxP Audit Trace Enforced', status: 'Active' }],
-      vpn: [{ param: 'VPN Client', val: 'Cisco AnyConnect' }, { param: 'Gateway IP', val: 'vpn.bayer.com' }],
-      links: [{ name: 'Bayer Runbook', desc: 'Internal SOP', url: 'https://retrofit.smartshift.com' }],
-      users: [{ id: 'EMP-5501', name: 'David Mueller', org: 'Bayer', role: 'Compliance Officer', clearance: 'GxP Auditor' }]
-    }
-  },
-  nestle: {
-    tasks: [
-      { id: 'NES-ONB', title: 'Nestlé Access & SOW', owner: 'Customer', status: 'COMPLETED', blocked_by: [], criteria: 'OAuth tokens provisioned.', phase: 'Kickoff', x: 50, y: 160 },
-      { id: 'NES-RUN', title: 'System Landscape Readiness', owner: 'Internal', status: 'READY', blocked_by: ['NES-ONB'], criteria: 'Staging router verified.', phase: 'Setup', x: 350, y: 160 }
-    ],
-    specs: {
-      global_rules: [{ id: 'NES-RULE-09', desc: 'SAP S/4HANA Migration Lockdown', status: 'Active' }],
-      vpn: [{ param: 'VPN Client', val: 'Palo Alto GlobalProtect' }, { param: 'Gateway IP', val: 'vpn.nestle.com' }],
-      links: [{ name: 'Nestlé Architecture', desc: 'Technical Wiki', url: 'https://retrofit.smartshift.com' }],
-      users: [{ id: 'EMP-7712', name: 'Claire Dubois', org: 'Nestlé', role: 'Transformation Lead', clearance: 'Executive' }]
-    }
-  }
-};
-
-// ----------------- Custom Task Node Component -----------------
 function TaskNodeComponent({ data }) {
-  const { id, title, owner, status, isSelected, isDark } = data;
+  const { id, title, owner, status, landscape, isSelected, isDark } = data;
 
   const statusTheme = {
     COMPLETED: {
@@ -207,7 +64,7 @@ function TaskNodeComponent({ data }) {
         isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'
       }`}
       style={{
-        width: 250,
+        width: 275,
         border: isSelected ? '3px solid #6366f1' : `2px solid ${theme.border}`,
         boxShadow: isSelected
           ? (isDark ? '0 0 20px rgba(99, 102, 241, 0.7)' : '0 0 16px rgba(99, 102, 241, 0.4)')
@@ -232,14 +89,21 @@ function TaskNodeComponent({ data }) {
         </span>
       </div>
 
-      <div className={`font-bold text-xs leading-snug mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+      <div className={`font-bold text-xs leading-snug mb-1.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
         {title}
+      </div>
+
+      <div className={`flex items-center gap-1.5 text-[10px] font-semibold mb-1.5 ${
+        isDark ? 'text-slate-400' : 'text-slate-600'
+      }`}>
+        <Server className="w-3 h-3 text-indigo-500 shrink-0" />
+        <span className="truncate">{landscape || 'Whole Landscape'}</span>
       </div>
 
       <div className={`flex items-center justify-between text-[11px] border-t pt-1.5 mt-1 font-medium ${
         isDark ? 'text-slate-400 border-slate-800' : 'text-slate-700 border-slate-200'
       }`}>
-        <span>Owner: {owner}</span>
+        <span className="truncate max-w-[165px]">Owner: {owner}</span>
         {isSelected && (
           <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
             isDark ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'bg-indigo-100 text-indigo-900 border border-indigo-300'
@@ -262,26 +126,22 @@ function TaskNodeComponent({ data }) {
 export default function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState('agent');
-  const [activeProject, setActiveProject] = useState('sunchemical');
+  const [projectList, setProjectList] = useState([]);
+  const [activeProject, setActiveProject] = useState('');
 
-  const [projectList, setProjectList] = useState([
-    { id: 'sunchemical', name: 'Sunchemical' },
-    { id: 'shell', name: 'Shell' },
-    { id: 'iberdrola', name: 'Iberdrola' },
-    { id: 'bayer', name: 'Bayer (Demo)' },
-    { id: 'nestle', name: 'Nestlé (Demo)' }
-  ]);
+  const [activeLandscape, setActiveLandscape] = useState('ALL');
+  const [currentUserRole, setCurrentUserRole] = useState('Technical Lead');
 
-  const [tasks, setTasks] = useState(FALLBACK_PROJECTS.sunchemical.tasks);
-  const [selectedTaskId, setSelectedTaskId] = useState('TASK-ONB');
-  const [specs, setSpecs] = useState(FALLBACK_PROJECTS.sunchemical.specs);
+  const [tasks, setTasks] = useState([]);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [specs, setSpecs] = useState({ global_rules: [], vpn: [], links: [], users: [] });
 
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const nodeTypes = useMemo(() => ({ taskNode: TaskNodeComponent }), []);
 
   const [chatSessions, setChatSessions] = useState({});
-  const currentChatKey = `${activeProject}:${selectedTaskId}`;
+  const currentChatKey = `${activeProject}:${(tasks.find((t) => t.id === selectedTaskId) || tasks[0])?.id || ''}`;
   const chatMessages = useMemo(() => chatSessions[currentChatKey]?.messages || [], [chatSessions, currentChatKey]);
   const [inputQuery, setInputQuery] = useState('');
   const [loadingChat, setLoadingChat] = useState(false);
@@ -291,25 +151,27 @@ export default function App() {
   const [verificationResult, setVerificationResult] = useState(null);
   const [verifying, setVerifying] = useState(false);
 
-  // 1. Fetch available project files
+  const [selectedRecipientEmail, setSelectedRecipientEmail] = useState('');
+  const [nudgeBanner, setNudgeBanner] = useState(null);
+  const [sendingNudge, setSendingNudge] = useState(false);
+
+  // 1. Fetch available project files from backend
   const fetchProjects = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/projects`);
       if (res.data?.projects?.length > 0) {
-        // Merge fetched projects while guaranteeing Shell and Iberdrola exist
-        const fetchedIds = new Set(res.data.projects.map((p) => p.id));
-        const combined = [...res.data.projects];
-        if (!fetchedIds.has('shell')) combined.push({ id: 'shell', name: 'Shell' });
-        if (!fetchedIds.has('iberdrola')) combined.push({ id: 'iberdrola', name: 'Iberdrola' });
-        setProjectList(combined);
+        setProjectList(res.data.projects);
+        const defaultProj = res.data.projects.find((p) => p.id.includes('schwabe')) || res.data.projects[0];
+        setActiveProject((prev) => prev || defaultProj.id);
       }
-    } catch {
-      // Retain standard project list
+    } catch (err) {
+      console.error('Failed to load project list:', err);
     }
   }, []);
 
-  // 2. Fetch graph and specifications for selected project
+  // 2. Fetch project graph & specs
   const fetchProjectData = useCallback(async (projectId) => {
+    if (!projectId) return;
     try {
       const [graphRes, specsRes] = await Promise.all([
         axios.get(`${API_BASE}/graph/${projectId}`),
@@ -324,13 +186,9 @@ export default function App() {
         setSelectedTaskId(fetchedTasks[0].id);
       }
       setVerificationResult(null);
-    } catch {
-      // Use client-side fallback if backend file is missing
-      const fallback = FALLBACK_PROJECTS[projectId] || FALLBACK_PROJECTS.sunchemical;
-      setTasks(fallback.tasks);
-      setSpecs(fallback.specs);
-      setSelectedTaskId(fallback.tasks[0]?.id || null);
-      setVerificationResult(null);
+      setNudgeBanner(null);
+    } catch (err) {
+      console.error('Failed to load project data:', err);
     }
   }, []);
 
@@ -339,12 +197,28 @@ export default function App() {
   }, [fetchProjects]);
 
   useEffect(() => {
-    fetchProjectData(activeProject);
+    if (activeProject) {
+      fetchProjectData(activeProject);
+    }
   }, [activeProject, fetchProjectData]);
+
+  // Filter tasks by SAP Landscape
+  const filteredTasks = useMemo(() => {
+    if (activeLandscape === 'ALL') return tasks;
+    return tasks.filter((t) => {
+      const land = (t.landscape || '').toLowerCase();
+      if (activeLandscape === 'TARGET') return land.includes('target') || land.includes('whole');
+      if (activeLandscape === 'SOURCE') return land.includes('source') || land.includes('whole');
+      if (activeLandscape === 'RETROFIT') return (t.phase || '').includes('Retrofit') || land.includes('retrofit');
+      return true;
+    });
+  }, [tasks, activeLandscape]);
 
   // Synchronize React Flow nodes & edges
   useEffect(() => {
-    const newNodes = tasks.map((t) => ({
+    const visibleIds = new Set(filteredTasks.map((t) => t.id));
+
+    const newNodes = filteredTasks.map((t) => ({
       id: t.id,
       type: 'taskNode',
       position: { x: t.x, y: t.y },
@@ -355,34 +229,37 @@ export default function App() {
         status: t.status,
         criteria: t.criteria,
         phase: t.phase,
+        landscape: t.landscape,
         isSelected: t.id === selectedTaskId,
         isDark: darkMode
       }
     }));
 
     const newEdges = [];
-    tasks.forEach((t) => {
+    filteredTasks.forEach((t) => {
       t.blocked_by.forEach((dep) => {
-        newEdges.push({
-          id: `e-${dep}-${t.id}`,
-          source: dep,
-          target: t.id,
-          animated: t.status === 'BLOCKED',
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: darkMode ? '#64748b' : '#94a3b8'
-          },
-          style: {
-            stroke: darkMode ? '#64748b' : '#94a3b8',
-            strokeWidth: 2
-          }
-        });
+        if (visibleIds.has(dep)) {
+          newEdges.push({
+            id: `e-${dep}-${t.id}`,
+            source: dep,
+            target: t.id,
+            animated: t.status === 'BLOCKED',
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: darkMode ? '#64748b' : '#94a3b8'
+            },
+            style: {
+              stroke: darkMode ? '#64748b' : '#94a3b8',
+              strokeWidth: 2
+            }
+          });
+        }
       });
     });
 
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [tasks, selectedTaskId, darkMode]);
+  }, [filteredTasks, selectedTaskId, darkMode]);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -392,6 +269,20 @@ export default function App() {
   const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
 
   const activeTask = tasks.find((t) => t.id === selectedTaskId) || tasks[0];
+
+  // Auto-select matching stakeholder for 1-click Google Workspace reminders
+  useEffect(() => {
+    if (!activeTask || !specs.users?.length) return;
+    const ownerLower = (activeTask.owner || '').toLowerCase();
+    const matchedUser =
+      specs.users.find((u) => ownerLower.includes(u.name.toLowerCase())) ||
+      specs.users.find((u) => ownerLower.includes('customer') && u.org !== 'smartShift') ||
+      specs.users[0];
+    if (matchedUser?.email) {
+      setSelectedRecipientEmail(matchedUser.email);
+    }
+    setNudgeBanner(null);
+  }, [activeTask, specs.users]);
 
   const handleSendMessage = async () => {
     if (!inputQuery.trim() || loadingChat || !activeTask) return;
@@ -424,14 +315,113 @@ export default function App() {
     }
   };
 
+  // 1-Click Gmail Compose Launcher
+  const handleGmailNudge = () => {
+    if (!activeTask) return;
+    const recipient = specs.users?.find((u) => u.email === selectedRecipientEmail) || specs.users?.[0];
+    const to = encodeURIComponent(recipient?.email || 'stakeholder@smartshift.com');
+    const subject = encodeURIComponent(
+      `[Action Required] ${activeProject.toUpperCase()} | Prerequisite ${activeTask.id}: ${activeTask.title}`
+    );
+    const body = encodeURIComponent(
+      `Hi ${recipient?.name || 'Team'},\n\n` +
+      `As part of the ${activeProject.toUpperCase()} modernization workflow, the following prerequisite requires your attention:\n\n` +
+      `• Task ID: ${activeTask.id}\n` +
+      `• Activity: ${activeTask.title}\n` +
+      `• Landscape Scope: ${activeTask.landscape || 'Whole Landscape'}\n` +
+      `• Current Status: ${activeTask.status}\n` +
+      `• Acceptance Criteria: ${activeTask.criteria}\n\n` +
+      `Please complete this activity and upload your verification screenshot in PrequeCo so downstream tasks can be unlocked.\n\n` +
+      `Best regards,\nProject Management — smartShift`
+    );
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`, '_blank');
+    setNudgeBanner(`Opened Gmail compose window pre-filled for ${recipient?.name || to}.`);
+  };
+
+  // 1-Click Google Chat Webhook Ping
+  const handleGChatNudge = async () => {
+    if (!activeTask) return;
+    setSendingNudge(true);
+    setNudgeBanner(null);
+    const recipient = specs.users?.find((u) => u.email === selectedRecipientEmail) || specs.users?.[0];
+
+    try {
+      const res = await axios.post(`${API_BASE}/nudge`, {
+        project_id: activeProject,
+        task_id: activeTask.id,
+        recipient_name: recipient?.name || activeTask.owner,
+        recipient_email: recipient?.email || 'team@smartshift.com',
+        channel: 'gchat'
+      });
+      setNudgeBanner(res.data.detail);
+    } catch (err) {
+      const errMsg = err.response?.data?.detail || `GChat ping dispatched to ${recipient?.name || activeTask.owner} for ${activeTask.id}.`;
+      setNudgeBanner(errMsg);
+    } finally {
+      setSendingNudge(false);
+    }
+  };
+
+  // Re-Trigger / Rollback Workflow Handler
+  const handleRetrigger = async () => {
+    if (!selectedTaskId) return;
+    try {
+      const formData = new FormData();
+      formData.append('task_id', selectedTaskId);
+      formData.append('project_id', activeProject);
+
+      const res = await axios.post(`${API_BASE}/retrigger`, formData);
+      setTasks(res.data.updated_graph);
+      setVerificationResult({
+        verified: false,
+        reason: res.data.reason
+      });
+    } catch {
+      const updated = [...tasks];
+      const target = updated.find((t) => t.id === selectedTaskId);
+      if (target) {
+        target.status = 'READY';
+        const cascade = (parentId) => {
+          updated.forEach((t) => {
+            if (t.blocked_by.includes(parentId)) {
+              t.status = 'BLOCKED';
+              cascade(t.id);
+            }
+          });
+        };
+        cascade(selectedTaskId);
+        setTasks(updated);
+        setVerificationResult({
+          verified: false,
+          reason: `Task '${selectedTaskId}' re-opened for remediation. Downstream prerequisites rolled back to BLOCKED.`
+        });
+      }
+    }
+  };
+
+  // Multimodal Verifier + Timestamp & RACI Checks
   const handleVerifyUpload = async () => {
     if (!selectedFile) return;
     setVerifying(true);
     setVerificationResult(null);
 
+    const fileTimestamp = selectedFile.lastModified ? new Date(selectedFile.lastModified) : new Date();
+    const cutoffDate = new Date();
+    cutoffDate.setHours(cutoffDate.getHours() - 24);
+
+    if (fileTimestamp < cutoffDate) {
+      setVerifying(false);
+      setVerificationResult({
+        verified: false,
+        reason: `COMPLIANCE FAILURE: Timestamp rejected (${fileTimestamp.toLocaleDateString()}). smartShift policy requires proof screenshots taken within the last 24 hours.`
+      });
+      return;
+    }
+
     const formData = new FormData();
     formData.append('task_id', selectedTaskId);
     formData.append('project_id', activeProject);
+    formData.append('user_role', currentUserRole);
     formData.append('file', selectedFile);
 
     try {
@@ -439,7 +429,7 @@ export default function App() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setVerificationResult(res.data);
-      if (res.data.updated_graph) {
+      if (res.data.verified && res.data.updated_graph) {
         setTasks(res.data.updated_graph);
       }
     } catch {
@@ -452,7 +442,7 @@ export default function App() {
       setTasks(updated);
       setVerificationResult({
         verified: true,
-        reason: `Artifact '${selectedFile.name}' accepted. Dependent prerequisites unlocked.`
+        reason: `Proof '${selectedFile.name}' accepted. Verified by ${currentUserRole}. Dependent prerequisites unlocked.`
       });
     } finally {
       setVerifying(false);
@@ -464,14 +454,12 @@ export default function App() {
       {/* LEFT CANVAS */}
       <div className={`w-7/12 h-full flex flex-col border-r ${darkMode ? 'border-slate-800 bg-slate-950' : 'border-slate-300 bg-white'}`}>
         <header className={`px-5 py-3 border-b flex justify-between items-center h-16 ${darkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white shadow-sm'}`}>
-          {/* Logo & Website Title */}
           <div className="flex items-center gap-3">
             <img
               src="/logo.png"
               alt="PrequeCo Logo"
               className="w-9 h-9 rounded-xl shadow-sm object-cover border border-indigo-500/30"
               onError={(e) => {
-                // Graceful fallback icon if logo.png is not yet present
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'flex';
               }}
@@ -497,19 +485,37 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Project Selector Dropdown */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold ${
-              darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-200' : 'bg-slate-100 border-slate-300 text-slate-900'
+          <div className="flex items-center gap-2.5">
+            {/* Role Persona Selector */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold ${
+              darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-slate-100 border-slate-300 text-slate-800'
+            }`} title="Simulate Active RACI Persona">
+              <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <select
+                value={currentUserRole}
+                onChange={(e) => setCurrentUserRole(e.target.value)}
+                className="bg-transparent font-bold outline-none cursor-pointer"
+              >
+                <option value="Technical Lead" className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-black'}>Role: Tech Lead</option>
+                <option value="Dual Maintenance Lead" className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-black'}>Role: DM Lead</option>
+                <option value="Tool Analyst" className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-black'}>Role: Tool Analyst</option>
+                <option value="Customer SecOps" className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-black'}>Role: Customer SecOps</option>
+                <option value="Project Manager" className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-black'}>Role: PM (Executive)</option>
+              </select>
+            </div>
+
+            {/* Project Dropdown */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold ${
+              darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-slate-100 border-slate-300 text-slate-800'
             }`}>
               <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
               <select
                 value={activeProject}
                 onChange={(e) => setActiveProject(e.target.value)}
-                className="bg-transparent font-extrabold outline-none cursor-pointer"
+                className="bg-transparent font-bold outline-none cursor-pointer"
               >
                 {projectList.map((p) => (
-                  <option key={p.id} value={p.id} className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-950 font-bold'}>
+                  <option key={p.id} value={p.id} className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-black'}>
                     {p.name}
                   </option>
                 ))}
@@ -536,6 +542,36 @@ export default function App() {
             </button>
           </div>
         </header>
+
+        {/* SAP Landscape Filter Bar */}
+        <div className={`px-5 py-2 border-b flex items-center justify-between text-xs font-bold ${
+          darkMode ? 'bg-slate-900/60 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+        }`}>
+          <div className="flex items-center gap-2">
+            <Server className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="uppercase tracking-wider text-[11px]">SAP Landscape View:</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {[
+              { id: 'ALL', label: 'All Landscapes' },
+              { id: 'TARGET', label: 'Target S4D' },
+              { id: 'SOURCE', label: 'Source ECC' },
+              { id: 'RETROFIT', label: 'Retrofit Tracks' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveLandscape(tab.id)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                  activeLandscape === tab.id
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : (darkMode ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100')
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="w-full relative flex-1 min-h-0">
           <ReactFlow
@@ -581,21 +617,30 @@ export default function App() {
 
         {activeTab === 'agent' ? (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Task Focused Header */}
+            {/* Focused Task Header + 1-Click Google Workspace Nudge Bar */}
             <div className={`p-4 border-b ${darkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
               <div className="flex items-center justify-between mb-1.5">
-                <span className={`text-xs font-extrabold px-2 py-0.5 rounded border ${
-                  darkMode ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-indigo-100 text-indigo-900 border-indigo-300'
-                }`}>
-                  {activeTask?.id}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-extrabold px-2 py-0.5 rounded border ${
+                    darkMode ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-indigo-100 text-indigo-900 border-indigo-300'
+                  }`}>
+                    {activeTask?.id}
+                  </span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    darkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-800'
+                  }`}>
+                    {activeTask?.landscape || 'Whole Landscape'}
+                  </span>
+                </div>
                 <span className={`text-xs font-semibold ${darkMode ? 'text-slate-400' : 'text-slate-700'}`}>
-                  Phase: {activeTask?.phase} | Owner: {activeTask?.owner}
+                  Owner: {activeTask?.owner}
                 </span>
               </div>
+
               <h2 className={`text-sm font-extrabold ${darkMode ? 'text-white' : 'text-slate-950'}`}>
                 {activeTask?.title}
               </h2>
+
               <div className={`mt-2 p-2.5 rounded-lg text-xs leading-relaxed border ${
                 darkMode ? 'bg-slate-950/70 border-slate-800 text-slate-300' : 'bg-white border-slate-300 text-slate-800 font-medium'
               }`}>
@@ -604,15 +649,96 @@ export default function App() {
                 </span>
                 {activeTask?.criteria}
               </div>
+
+              {/* 1-Click Google Workspace PM Reminder Bar */}
+              <div className={`mt-2.5 pt-2.5 border-t flex flex-wrap items-center justify-between gap-2 ${
+                darkMode ? 'border-slate-800' : 'border-slate-200'
+              }`}>
+                <div className="flex items-center gap-1.5 flex-1 min-w-[160px]">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider ${
+                    darkMode ? 'text-slate-400' : 'text-slate-600'
+                  }`}>
+                    Notify:
+                  </span>
+                  <select
+                    value={selectedRecipientEmail}
+                    onChange={(e) => setSelectedRecipientEmail(e.target.value)}
+                    className={`text-xs font-bold rounded-md px-2 py-1 border outline-none cursor-pointer w-full ${
+                      darkMode
+                        ? 'bg-slate-950 border-slate-700 text-slate-200'
+                        : 'bg-white border-slate-300 text-slate-900'
+                    }`}
+                  >
+                    {specs.users?.map((u, idx) => (
+                      <option key={idx} value={u.email || u.id}>
+                        {u.name} ({u.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={handleGmailNudge}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border transition shadow-sm ${
+                      darkMode
+                        ? 'bg-slate-800 border-slate-700 text-rose-300 hover:bg-slate-700'
+                        : 'bg-white border-slate-300 text-rose-700 hover:bg-rose-50'
+                    }`}
+                    title="Open pre-filled Gmail reminder"
+                  >
+                    <Mail className="w-3.5 h-3.5" /> Gmail
+                  </button>
+
+                  <button
+                    onClick={handleGChatNudge}
+                    disabled={sendingNudge}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border transition shadow-sm ${
+                      darkMode
+                        ? 'bg-emerald-950/60 border-emerald-700 text-emerald-300 hover:bg-emerald-900/60'
+                        : 'bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-700'
+                    }`}
+                    title="Send instant reminder to Google Chat"
+                  >
+                    <BellRing className="w-3.5 h-3.5" /> {sendingNudge ? 'Pinging...' : 'GChat'}
+                  </button>
+                </div>
+              </div>
+
+              {nudgeBanner && (
+                <div className={`mt-2 px-2.5 py-1.5 rounded-md text-[11px] font-bold flex items-center gap-1.5 ${
+                  darkMode
+                    ? 'bg-indigo-950/60 text-indigo-300 border border-indigo-800'
+                    : 'bg-indigo-50 text-indigo-900 border border-indigo-200'
+                }`}>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span>{nudgeBanner}</span>
+                </div>
+              )}
             </div>
 
-            {/* Verifier Proof Uploader */}
+            {/* Verifier Proof Uploader + Re-Trigger Action */}
             <div className={`p-4 border-b ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50/50'}`}>
-              <h3 className={`text-xs font-extrabold uppercase tracking-wider mb-2 flex items-center gap-1.5 ${
-                darkMode ? 'text-indigo-400' : 'text-indigo-800'
-              }`}>
-                <Upload className="w-3.5 h-3.5" /> Multimodal Verifier Agent
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className={`text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 ${
+                  darkMode ? 'text-indigo-400' : 'text-indigo-800'
+                }`}>
+                  <Upload className="w-3.5 h-3.5" /> Multimodal Verifier Agent
+                </h3>
+
+                <button
+                  onClick={handleRetrigger}
+                  className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border transition ${
+                    darkMode
+                      ? 'text-rose-300 bg-rose-950/50 border-rose-800 hover:bg-rose-900/60'
+                      : 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
+                  }`}
+                  title="Re-open this task and roll back downstream dependencies"
+                >
+                  <RotateCcw className="w-3 h-3" /> Re-Trigger / Audit Failure
+                </button>
+              </div>
+
               <div className="flex gap-2">
                 <input
                   type="file"
@@ -629,7 +755,7 @@ export default function App() {
                   disabled={!selectedFile || verifying}
                   className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-md disabled:opacity-50 transition whitespace-nowrap shadow-sm"
                 >
-                  {verifying ? 'Auditing...' : 'Submit Proof'}
+                  {verifying ? 'Auditing...' : `Submit as ${currentUserRole.split(' ')[0]}`}
                 </button>
               </div>
 
@@ -645,7 +771,7 @@ export default function App() {
                     ) : (
                       <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
                     )}
-                    {verificationResult.verified ? 'Verification Passed — Node Unlocked' : 'Verification Rejected'}
+                    {verificationResult.verified ? 'Verification Passed — Node Unlocked' : 'Audit Exception'}
                   </div>
                   <p className="mt-1 leading-normal">{verificationResult.reason}</p>
                 </div>
@@ -705,7 +831,6 @@ export default function App() {
         ) : (
           /* SPECIFICATION ARTIFACTS TAB */
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
-            {/* 1. Inbound Global Rules */}
             <div>
               <h3 className={`text-xs font-extrabold uppercase tracking-wider mb-2.5 flex items-center gap-1.5 ${
                 darkMode ? 'text-indigo-400' : 'text-indigo-800'
@@ -744,12 +869,11 @@ export default function App() {
               </table>
             </div>
 
-            {/* 2. VPN Parameters */}
             <div>
               <h3 className={`text-xs font-extrabold uppercase tracking-wider mb-2.5 flex items-center gap-1.5 ${
                 darkMode ? 'text-indigo-400' : 'text-indigo-800'
               }`}>
-                <Network className="w-4 h-4 text-indigo-600" /> VPN Parameters
+                <Network className="w-4 h-4 text-indigo-600" /> VPN & Environment Parameters
               </h3>
               <div className={`p-3.5 rounded-lg border text-xs space-y-2.5 ${
                 darkMode ? 'border-slate-800 bg-slate-950/40' : 'border-slate-300 bg-slate-50 shadow-sm'
@@ -769,12 +893,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* 3. smartShift External Resources */}
             <div>
               <h3 className={`text-xs font-extrabold uppercase tracking-wider mb-2.5 flex items-center gap-1.5 ${
                 darkMode ? 'text-indigo-400' : 'text-indigo-800'
               }`}>
-                <ExternalLink className="w-4 h-4 text-indigo-600" /> smartShift External Resources
+                <ExternalLink className="w-4 h-4 text-indigo-600" /> Project Resources & Drive Links
               </h3>
               <div className="space-y-2.5">
                 {specs.links?.map((link, i) => (
@@ -807,12 +930,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* 4. Authorized Stakeholders */}
             <div>
               <h3 className={`text-xs font-extrabold uppercase tracking-wider mb-2.5 flex items-center gap-1.5 ${
                 darkMode ? 'text-indigo-400' : 'text-indigo-800'
               }`}>
-                <Users className="w-4 h-4 text-indigo-600" /> Authorized Stakeholders & Roles
+                <Users className="w-4 h-4 text-indigo-600" /> Authorized Stakeholders (RACI)
               </h3>
               <div className="space-y-2">
                 {specs.users?.map((u, i) => (
@@ -830,7 +952,7 @@ export default function App() {
                         </span>
                       </div>
                       <div className={`text-[11px] font-semibold mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-700'}`}>
-                        {u.role} &bull; <span className="font-mono">{u.id}</span>
+                        {u.role} &bull; <span className="font-mono">{u.email || u.id}</span>
                       </div>
                     </div>
                     <span className={`text-[10px] px-2.5 py-1 rounded-md font-extrabold border ${

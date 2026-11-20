@@ -91,7 +91,7 @@ The frontend provides the interactive graph canvas and the AI chat drawer.
 ## 🎮 How to Use the Demo
 
 1. **View the Graph**: On the left side, you'll see the project dependency graph. Green means completed, Yellow means ready/actionable, and Red means blocked.
-2. **Chat with the Concierge**: Click on `TASK-1` (Provision Dev IAM Role). On the right side, ask the chat bot a question like, *"How do I complete this task?"* Gemini will answer using the selected task and the built-in demo specifications.
+2. **Chat with the Concierge**: Click on `TASK-1` (Provision Dev IAM Role). On the right side, ask the chat bot a question like, *"How do I complete this task?"* Gemini will answer using the selected task and the project workbook specifications.
 3. **Verify an Artifact**: 
    * Take any screenshot on your computer (e.g., a picture of your desktop or browser).
    * Under the **Multimodal Verifier Agent** section, click **Choose File** and upload your screenshot.
@@ -115,8 +115,8 @@ Current flow: React loads project graph/specifications, the user selects a task,
 Concierge sends the question and task/spec context to Gemini, and React displays the
 reply. Screenshot verification still uses the existing Groq path and unlocks dependent
 tasks. Project state is currently held in memory. The documents describe a wider
-parser/orchestration design; this change only connects Concierge. No PDF, Word,
-Excel, SOP upload, retrieval pipeline, or vector database is added yet. External
+parser/orchestration design; Concierge now uses the workbook-driven projects from main, including landscape
+and acceptance criteria. PDF, Word, and SOP upload/retrieval are not connected yet. External
 resource links are context labels, not fetched document contents.
 
 For the workspace-local environment created during setup, run from `backend`:
