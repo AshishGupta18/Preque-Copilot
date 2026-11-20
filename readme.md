@@ -27,25 +27,25 @@ The backend handles the AI logic, multimodal vision verification, and project st
    cd backend
    ```
 
-2. **Create a Python Virtual Environment**:
-   ```bash
-   # On Windows (PowerShell)
-   python -m venv venv
-   # OR if you have multiple versions: py -3.12 -m venv venv
+2. **Use the project Python environment**:
+   The existing workspace environment is `backend/.venv` (Python 3.12).
+   If setting up a fresh checkout, create it from the backend folder:
+   ```powershell
+   py -3.12 -m venv .venv
    ```
 
-3. **Activate the Virtual Environment**:
-   * **Windows**: `.\venv\Scripts\Activate.ps1`
-     *(Note: If you get a script execution error, run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` first).*
-   * **Mac/Linux**: `source venv/bin/activate`
-
-4. **Install Dependencies**:
-   Ensure `(venv)` is visible in your terminal prompt, then run:
-   ```bash
-
-   python -m pip install -r requirements.txt
+3. **Activation is optional**:
+   The commands below call the environment's Python directly, so they also work
+   when Anaconda is on PATH. For optional PowerShell activation:
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
    ```
-   *(If you are on a corporate network and face SSL errors, use: `pip install fastapi uvicorn groq pydantic python-dotenv python-multipart --trusted-host pypi.org --trusted-host files.pythonhosted.org`)*
+
+4. **Install Dependencies** (from the backend folder):
+   ```powershell
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+   ```
+   On macOS/Linux, use `.venv/bin/python` instead.
 
 5. **Set Environment Variables**:
    Copy `backend/.env.example` to `backend/.env` and set the keys (keep this file private):
@@ -58,8 +58,11 @@ The backend handles the AI logic, multimodal vision verification, and project st
 
 6. **Start the Backend Server**:
    ```bash
-   uvicorn main:app --reload --port 8000
+   .\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
    ```
+   If another server is running, stop it with Ctrl+C first. A plain `uvicorn`
+   command may select Anaconda and an incompatible Gemini SDK.
+
    The API is now running. You can view the interactive documentation at [http://localhost:8000/docs](http://localhost:8000/docs). Keep this terminal open!
 
 ---

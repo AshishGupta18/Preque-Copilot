@@ -145,6 +145,15 @@ export default function App() {
   const chatMessages = useMemo(() => chatSessions[currentChatKey]?.messages || [], [chatSessions, currentChatKey]);
   const [inputQuery, setInputQuery] = useState('');
   const [loadingChat, setLoadingChat] = useState(false);
+  const [thinkingStage, setThinkingStage] = useState(0);
+
+  useEffect(() => {
+    if (!loadingChat) return;
+    const timer = window.setInterval(() => {
+      setThinkingStage((stage) => (stage + 1) % 3);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [loadingChat]);
   const chatBottomRef = useRef(null);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -292,6 +301,7 @@ export default function App() {
     const messages = [...session.messages, { sender: 'user', text: userMsg }];
     setChatSessions((prev) => ({ ...prev, [key]: { ...session, messages } }));
     setInputQuery('');
+    setThinkingStage(0);
     setLoadingChat(true);
 
     try {
@@ -799,9 +809,9 @@ export default function App() {
                   </div>
                 ))}
                 {loadingChat && (
-                  <div className={`text-xs italic flex items-center gap-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>
+                  <div role="status" aria-live="polite" className={`text-xs italic flex items-center gap-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>
                     <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-                    Concierge asking Gemini...
+                    {['Concierge is thinking...', 'Concierge is analysing your question...', 'Concierge is preparing a response...'][thinkingStage]}
                   </div>
                 )}
                 <div ref={chatBottomRef} />
