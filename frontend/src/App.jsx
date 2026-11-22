@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -140,14 +140,20 @@ export default function App() {
   const [edges, setEdges] = useState([]);
   const nodeTypes = useMemo(() => ({ taskNode: TaskNodeComponent }), []);
 
-  const [chatMessages, setChatMessages] = useState([
-    {
-      sender: 'agent',
-      text: 'smartShift PrereqCopilot active. Click any node in the dependency web to view criteria, send PM reminders, or ask procedural questions.'
-    }
-  ]);
+  const [chatSessions, setChatSessions] = useState({});
+  const currentChatKey = `${activeProject}:${(tasks.find((t) => t.id === selectedTaskId) || tasks[0])?.id || ''}`;
+  const chatMessages = useMemo(() => chatSessions[currentChatKey]?.messages || [], [chatSessions, currentChatKey]);
   const [inputQuery, setInputQuery] = useState('');
   const [loadingChat, setLoadingChat] = useState(false);
+  const [thinkingStage, setThinkingStage] = useState(0);
+
+  useEffect(() => {
+    if (!loadingChat) return;
+    const timer = window.setInterval(() => {
+      setThinkingStage((stage) => (stage + 1) % 3);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [loadingChat]);
   const chatBottomRef = useRef(null);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -288,27 +294,32 @@ export default function App() {
   }, [activeTask, specs.users]);
 
   const handleSendMessage = async () => {
-    if (!inputQuery.trim()) return;
-    const userMsg = inputQuery;
-    setChatMessages((prev) => [...prev, { sender: 'user', text: userMsg }]);
+    if (!inputQuery.trim() || loadingChat || !activeTask) return;
+    const key = currentChatKey;
+    const session = chatSessions[key] || { messages: [], interactionId: null };
+    const userMsg = inputQuery.trim();
+    const messages = [...session.messages, { sender: 'user', text: userMsg }];
+    setChatSessions((prev) => ({ ...prev, [key]: { ...session, messages } }));
     setInputQuery('');
+    setThinkingStage(0);
     setLoadingChat(true);
 
     try {
       const res = await axios.post(`${API_BASE}/chat`, {
-        task_id: selectedTaskId,
+        task_id: activeTask.id,
         message: userMsg,
-        project_id: activeProject
+        project_id: activeProject,
+        previous_interaction_id: session.interactionId
       });
-      setChatMessages((prev) => [...prev, { sender: 'agent', text: res.data.reply }]);
-    } catch {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: 'agent',
-          text: `• Procedural Guide for ${activeTask?.title}:\n• Scope: ${activeTask?.landscape || 'Whole Landscape'}\n• Requirement: ${activeTask?.criteria}\n• Upload console proof once finished.`
-        }
-      ]);
+      setChatSessions((prev) => ({ ...prev, [key]: {
+        interactionId: res.data.interaction_id,
+        messages: [...messages, { sender: 'agent', text: res.data.reply }]
+      } }));
+    } catch (error) {
+      setChatSessions((prev) => ({ ...prev, [key]: { ...session, messages: [...messages, {
+        sender: 'agent',
+        text: error.response?.data?.detail || 'Unable to reach Concierge. Check that the backend is running and retry.'
+      }] } }));
     } finally {
       setLoadingChat(false);
     }
@@ -798,9 +809,9 @@ export default function App() {
                   </div>
                 ))}
                 {loadingChat && (
-                  <div className={`text-xs italic flex items-center gap-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>
+                  <div role="status" aria-live="polite" className={`text-xs italic flex items-center gap-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>
                     <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-                    Concierge analyzing runbooks...
+                    {['Concierge is thinking...', 'Concierge is analysing your question...', 'Concierge is preparing a response...'][thinkingStage]}
                   </div>
                 )}
                 <div ref={chatBottomRef} />
@@ -819,6 +830,7 @@ export default function App() {
                 />
                 <button
                   onClick={handleSendMessage}
+                  disabled={loadingChat || !inputQuery.trim()}
                   className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center justify-center shadow-sm"
                 >
                   <Send className="w-3.5 h-3.5" />

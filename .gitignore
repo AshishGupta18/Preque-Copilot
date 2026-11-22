@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+.tools/
+.python/
+.uv-cache/
+node_modules/
+dist/
+__pycache__/
+*.pyc
